@@ -5,12 +5,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @SuppressWarnings("serial")
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-public class AccountOpNotSupportedException extends RuntimeException {
-	public AccountOpNotSupportedException() {
-		super();
+public class BadRequestBodyException extends RuntimeException {
+	private static String ERR_MESSAGE = "Bad Request Body";
+	
+	public BadRequestBodyException() {
+		super(ERR_MESSAGE);
 	}
 	
-	public AccountOpNotSupportedException(String message) {
+	public BadRequestBodyException(String message) {
 		super(message);
 	}
 }

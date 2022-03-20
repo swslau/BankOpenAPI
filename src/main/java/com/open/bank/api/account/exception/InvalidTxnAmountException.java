@@ -5,12 +5,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @SuppressWarnings("serial")
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-public class AccountOpNotSupportedException extends RuntimeException {
-	public AccountOpNotSupportedException() {
-		super();
+public class InvalidTxnAmountException extends RuntimeException {
+	private static String ERR_MESSAGE = "Invalid Transaction Amount";
+	
+	public InvalidTxnAmountException() {
+		super(ERR_MESSAGE);
 	}
 	
-	public AccountOpNotSupportedException(String message) {
+	public InvalidTxnAmountException(String message) {
 		super(message);
 	}
 }

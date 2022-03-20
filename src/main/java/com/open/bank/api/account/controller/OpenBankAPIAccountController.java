@@ -34,7 +34,8 @@ import com.open.bank.api.account.entity.CurrencyBalance;
 import com.open.bank.api.account.entity.LoginAccountRequestBody;
 import com.open.bank.api.account.entity.PostAccountTxnRequestBody;
 import com.open.bank.api.account.exception.AccountNotFoundException;
-import com.open.bank.api.account.exception.AccountOpNotSupportedException;
+import com.open.bank.api.account.exception.BadRequestBodyException;
+import com.open.bank.api.account.exception.InvalidTxnAmountException;
 import com.open.bank.api.account.service.AccountBalanceService;
 import com.open.bank.api.auth.JWTUtil;
 
@@ -55,7 +56,7 @@ public class OpenBankAPIAccountController {
 	
 	@PostMapping("/auth/registry/user/login")
 	public ResponseEntity<Object> getUserLoginJWT(@RequestBody LoginAccountRequestBody body){
-		logger.info("getUserLoginJWT called");
+		logger.info("POST /auth/registry/user/login called");
 		try {
             UsernamePasswordAuthenticationToken authInputToken = new UsernamePasswordAuthenticationToken(body.getUsername(), body.getPassword());
 
@@ -71,7 +72,7 @@ public class OpenBankAPIAccountController {
 	
 	@GetMapping("/accountInfoEnquiry")
 	public ResponseEntity<Object> getAccountInfo(@RequestHeader(value=HEADER_STRING) String jwt, @RequestParam(value = "currency", required = false) String paramCurrency){
-		logger.info("getOneAccountBalance called");
+		logger.info("getAccountInfo called");
 		
 		try {
 			String username = jwtUtil.validateTokenAndRetrieveSubject(jwt.replace(TOKEN_PREFIX, ""));
@@ -91,7 +92,7 @@ public class OpenBankAPIAccountController {
 
 	@GetMapping("/accountBalEnquiry/{paramAccountNumber}")
 	public ResponseEntity<Object> getOneAccountBalance(@RequestHeader(value=HEADER_STRING) String jwt, @PathVariable String paramAccountNumber, @RequestParam(value = "currency", required = false) String paramCurrency){
-		logger.info("getOneAccountBalance called");
+		logger.info(String.format("GET /accountBalEnquiry/%s called", paramAccountNumber));
 		
 		try {
 			String username = jwtUtil.validateTokenAndRetrieveSubject(jwt.replace(TOKEN_PREFIX, ""));
@@ -149,13 +150,17 @@ public class OpenBankAPIAccountController {
 	
 	@PostMapping("/fundTransfer")
 	public ResponseEntity<Object> postFundTransfer(@RequestHeader(value=HEADER_STRING) String jwt, @RequestBody PostAccountTxnRequestBody requestBody){
+		logger.info("POST /fundTransfer called");
+		
 		try {
 			String username = jwtUtil.validateTokenAndRetrieveSubject(jwt.replace(TOKEN_PREFIX, ""));
 			
 			return ResponseEntity.ok().body(accountBalanceService.postTransactions(requestBody, username));
-		} catch(AccountOpNotSupportedException ex) {
+		} catch(BadRequestBodyException ex) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", ex.getMessage()));
 		} catch(AccountNotFoundException ex) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", ex.getMessage()));
+		} catch(InvalidTxnAmountException ex) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", ex.getMessage()));
 		} catch(Exception ex) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Internal server error"));

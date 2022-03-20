@@ -1,6 +1,7 @@
 package com.open.bank.api.account.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,8 @@ import com.open.bank.api.account.entity.Accounts;
 import com.open.bank.api.account.entity.FundTransferResponse;
 import com.open.bank.api.account.entity.PostAccountTxnRequestBody;
 import com.open.bank.api.account.exception.AccountNotFoundException;
-import com.open.bank.api.account.exception.AccountOpNotSupportedException;
+import com.open.bank.api.account.exception.BadRequestBodyException;
+import com.open.bank.api.account.exception.InvalidTxnAmountException;
 import com.open.bank.api.account.repository.AccountBalanceRepository;
 import com.open.bank.api.account.repository.AccountsRepository;
 
@@ -104,9 +106,31 @@ public class AccountBalanceService {
 	public FundTransferResponse postTransactions(PostAccountTxnRequestBody requestBody, String username) {
 		String fromAccount = requestBody.getFromAccount();
 		String toAccount = requestBody.getToAccount();
-		BigDecimal requestTxnAmount = requestBody.getTxnAmount();
+		BigDecimal requestTxnAmount = BigDecimal.ZERO;
 		String requestCurrency = requestBody.getCurrency();
-//		String requestAccountOp = requestBody.getAccountOp();
+		
+		// Validate fromAccount, toAccount
+		if(fromAccount.equals(toAccount)) {
+			throw new BadRequestBodyException("fromAccount and toAccount should be different");
+		}
+		
+		// Validate requestTxnAmount
+		try {
+			requestTxnAmount = requestBody.getTxnAmount().setScale(2, RoundingMode.DOWN);
+			
+			if(requestTxnAmount.signum() < 0) {
+				throw new InvalidTxnAmountException("txnAmount should not be negative");
+			}
+			
+			if(requestTxnAmount.signum() == 0) {
+				throw new InvalidTxnAmountException("txnAmount should not be 0");
+			}
+		} catch(Exception ex) {
+			if(ex.getMessage().length() > 0)
+				throw new InvalidTxnAmountException(ex.getMessage());
+			else
+				throw new InvalidTxnAmountException();
+		}
 		
 		logger.info(String.format("postTransactions - From: %s, To: %s, Amount: %s, Currency: %s", fromAccount, toAccount, requestTxnAmount, requestCurrency));
 		
