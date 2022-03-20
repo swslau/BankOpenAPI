@@ -7,20 +7,20 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonPropertyOrder({ "accountNumber", "balances", "lastUpdateTime" })
-public class AccountBalanceResp {
+public class AccountBalanceAllCurrency {
 	
 	private String accountNumber;
 	
 	private List<CurrencyBalance> balances;
 	
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss Z")
+	@JsonFormat(timezone = "GMT+08:00", pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
 	private ZonedDateTime lastUpdateTime;
 	
-	public AccountBalanceResp() {
+	public AccountBalanceAllCurrency() {
 		
 	}
 	
-	public AccountBalanceResp(String accountNumber, List<CurrencyBalance> balances, ZonedDateTime lastUpdateTime) {
+	public AccountBalanceAllCurrency(String accountNumber, List<CurrencyBalance> balances, ZonedDateTime lastUpdateTime) {
 		this.accountNumber = accountNumber;
 		this.balances = balances;
 		this.lastUpdateTime = lastUpdateTime;

@@ -62,11 +62,14 @@ public class AccountBalance {
 	@Column(name = "CURRENT_BALANCE")
 	private BigDecimal currentBalance;
 	
+	@Column(name = "AVAILABLE_BALANCE")
+	private BigDecimal availableBalance;
+	
 	@Id
 	@Column(name = "CURRENCY")
 	private String currency;
 
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss Z")
+	@JsonFormat(timezone = "GMT+08:00", pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
 	@Column(name = "LAST_UPDATE_TIME")
 	private ZonedDateTime lastUpdateTime;
 	
@@ -78,9 +81,16 @@ public class AccountBalance {
 		
 	}
 	
-	public AccountBalance(String accountNumber, BigDecimal currentBalance, String currency, ZonedDateTime lastUpdateTime) {
+	public AccountBalance(
+		String accountNumber,
+		BigDecimal currentBalance,
+		BigDecimal availableBalance,
+		String currency,
+		ZonedDateTime lastUpdateTime
+	) {
 		this.accountNumber = accountNumber;
 		this.currentBalance = currentBalance;
+		this.availableBalance = availableBalance;
 		this.currency = currency;
 		this.lastUpdateTime = lastUpdateTime;
 	}
@@ -99,6 +109,14 @@ public class AccountBalance {
 	
 	public void setCurrentBalance(BigDecimal currentBalance) {
 		this.currentBalance = currentBalance;
+	}
+	
+	public BigDecimal getAvailableBalance() {
+		return this.availableBalance;
+	}
+	
+	public void setAvailableBalance(BigDecimal availableBalance) {
+		this.availableBalance = availableBalance;
 	}
 
 	public String getCurrency() {

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.open.bank.api.account.entity.AccountBalance;
 import com.open.bank.api.account.entity.Accounts;
+import com.open.bank.api.account.entity.FundTransferResponse;
 import com.open.bank.api.account.entity.PostAccountTxnRequestBody;
 import com.open.bank.api.account.exception.AccountNotFoundException;
 import com.open.bank.api.account.exception.AccountOpNotSupportedException;
@@ -22,7 +23,7 @@ import com.open.bank.api.account.repository.AccountsRepository;
 
 @Service
 public class AccountBalanceService {
-	private static final Logger log = LoggerFactory.getLogger(AccountBalanceService.class);
+	private static final Logger logger = LoggerFactory.getLogger(AccountBalanceService.class);
 	
 	@Autowired
 	private AccountsRepository accountsRepo;
@@ -50,6 +51,16 @@ public class AccountBalanceService {
 		}
 //		return accountsRepo.findByUsernameAndCurrency(username, currency).orElseThrow(() -> new AccountNotFoundException(String.format("Cannot find any account with currency %s with your token", currency)));
 	}
+
+	private List<AccountBalance> getOneAccountBalanceInternal(String accountNumber) {
+		return accountBalanceRepo.findByAccountNumber(accountNumber)
+				.orElseThrow(() -> new AccountNotFoundException(String.format("Cannot find the balance for the account %s", accountNumber)));
+	}
+	
+	private AccountBalance getOneAccountBalanceByCurrencyInternal(String accountNumber, String currency) {
+		return accountBalanceRepo.findByAccountNumberAndCurrency(accountNumber, currency)
+				.orElseThrow(() -> new AccountNotFoundException(String.format("Cannot find the balance for the account %s, currency %s", accountNumber, currency)));
+	}
 	
 	public List<AccountBalance> getOneAccountBalance(String accountNumber, String username) {
 		return accountBalanceRepo.findByAccountNumberAndUsername(accountNumber, username)
@@ -61,31 +72,64 @@ public class AccountBalanceService {
 				.orElseThrow(() -> new AccountNotFoundException(String.format("Cannot find the balance for the account %s, currency %s with your token", accountNumber, currency)));
 	}
 	
-	public AccountBalance postAccountOp(String accountNumber, PostAccountTxnRequestBody requestBody, String username) {
+//	public AccountBalance postAccountOp(String accountNumber, PostAccountTxnRequestBody requestBody, String username) {
+//		BigDecimal requestTxnAmount = requestBody.getTxnAmount();
+//		String requestCurrency = requestBody.getCurrency();
+//		String requestAccountOp = requestBody.getAccountOp();
+//		
+//		logger.info(String.format("%s, %s, %s, %s", accountNumber, requestTxnAmount, requestCurrency, requestAccountOp));
+//		
+//		if(!requestAccountOp.equals("DR") && !requestAccountOp.equals("CR")) {
+//			throw new AccountOpNotSupportedException("Account operation not supported, should be either 'DR' or 'CR'");
+//		}
+//		
+//		try {
+//			AccountBalance ab = getOneAccountBalanceByCurrency(accountNumber, requestCurrency, username);
+//			if(requestAccountOp.equals("DR")) {
+//				ab.setCurrentBalance(ab.getCurrentBalance().subtract(requestTxnAmount));
+//				ab.setAvailableBalance(ab.getAvailableBalance().subtract(requestTxnAmount));
+//				ab.setLastUpdateTime(ZonedDateTime.now());
+//			} else if(requestAccountOp.equals("CR")) {
+//				ab.setCurrentBalance(ab.getCurrentBalance().add(requestTxnAmount));
+//				ab.setAvailableBalance(ab.getAvailableBalance().add(requestTxnAmount));
+//				ab.setLastUpdateTime(ZonedDateTime.now());
+//			}
+//			
+//			return accountBalanceRepo.saveAndFlush(ab);
+//		} catch(AccountNotFoundException ex) {
+//			throw(ex);
+//		}
+//	}
+	
+	public FundTransferResponse postTransactions(PostAccountTxnRequestBody requestBody, String username) {
+		String fromAccount = requestBody.getFromAccount();
+		String toAccount = requestBody.getToAccount();
 		BigDecimal requestTxnAmount = requestBody.getTxnAmount();
 		String requestCurrency = requestBody.getCurrency();
-		String requestAccountOp = requestBody.getAccountOp();
+//		String requestAccountOp = requestBody.getAccountOp();
 		
-		log.info(String.format("%s, %s, %s, %s", accountNumber, requestTxnAmount, requestCurrency, requestAccountOp));
-		
-		if(!requestAccountOp.equals("DR") && !requestAccountOp.equals("CR")) {
-			throw new AccountOpNotSupportedException("Account operation not supported, should be either 'DR' or 'CR'");
-		}
+		logger.info(String.format("postTransactions - From: %s, To: %s, Amount: %s, Currency: %s", fromAccount, toAccount, requestTxnAmount, requestCurrency));
 		
 		try {
-			AccountBalance ab = getOneAccountBalanceByCurrency(accountNumber, requestCurrency, username);
-			if(requestAccountOp.equals("DR")) {
-				ab.setCurrentBalance(ab.getCurrentBalance().subtract(requestTxnAmount));
-				ab.setLastUpdateTime(ZonedDateTime.now());
-			} else if(requestAccountOp.equals("CR")) {
-				ab.setCurrentBalance(ab.getCurrentBalance().add(requestTxnAmount));
-				ab.setLastUpdateTime(ZonedDateTime.now());
-			}
+			AccountBalance fromAB = getOneAccountBalanceByCurrency(fromAccount, requestCurrency, username);
+			AccountBalance toAB = getOneAccountBalanceByCurrencyInternal(toAccount, requestCurrency);
 			
-			return accountBalanceRepo.saveAndFlush(ab);
+			fromAB.setCurrentBalance(fromAB.getCurrentBalance().subtract(requestTxnAmount));
+			fromAB.setAvailableBalance(fromAB.getAvailableBalance().subtract(requestTxnAmount));
+			fromAB.setLastUpdateTime(ZonedDateTime.now());
+			
+			toAB.setCurrentBalance(toAB.getCurrentBalance().add(requestTxnAmount));
+			toAB.setAvailableBalance(toAB.getAvailableBalance().add(requestTxnAmount));
+			toAB.setLastUpdateTime(ZonedDateTime.now());
+			
+			AccountBalance newFromAB = accountBalanceRepo.saveAndFlush(fromAB);
+			AccountBalance newToAB = accountBalanceRepo.saveAndFlush(toAB);
+			
+			FundTransferResponse fundTransferResponse = new FundTransferResponse(newFromAB, newToAB);
+			return fundTransferResponse;
+			
 		} catch(AccountNotFoundException ex) {
 			throw(ex);
 		}
 	}
-
 }

@@ -6,23 +6,23 @@ import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JavaBean
-@JsonPropertyOrder({ "currentBalance", "currency" })
+@JsonPropertyOrder({ "availableBalance", "currency" })
 public class CurrencyBalance {
-	private BigDecimal currentBalance;
+	private BigDecimal availableBalance;
 	
 	private String currency;
 	
-	public CurrencyBalance(BigDecimal currentBalance, String currency) {
-		this.currentBalance = currentBalance;
+	public CurrencyBalance(BigDecimal availableBalance, String currency) {
+		this.availableBalance = availableBalance;
 		this.currency = currency;
 	}
 	
-	public BigDecimal getCurrentBalance() {
-		return this.currentBalance;
+	public BigDecimal getAvailableBalance() {
+		return this.availableBalance;
 	}
 	
-	public void setCurrentBalance(BigDecimal currentBalance) {
-		this.currentBalance = currentBalance;
+	public void settAvailableBalance(BigDecimal availableBalance) {
+		this.availableBalance = availableBalance;
 	}
 
 	public String getCurrency() {

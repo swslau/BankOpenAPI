@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.open.bank.api.account.entity.AccountBalance;
-import com.open.bank.api.account.entity.AccountBalanceResp;
+import com.open.bank.api.account.entity.AccountBalanceAllCurrency;
 import com.open.bank.api.account.entity.CurrencyBalance;
 import com.open.bank.api.account.entity.LoginAccountRequestBody;
 import com.open.bank.api.account.entity.PostAccountTxnRequestBody;
@@ -97,7 +97,7 @@ public class OpenBankAPIAccountController {
 			String username = jwtUtil.validateTokenAndRetrieveSubject(jwt.replace(TOKEN_PREFIX, ""));
 			
 			if(paramCurrency == null) {
-				AccountBalanceResp response = new AccountBalanceResp();
+				AccountBalanceAllCurrency response = new AccountBalanceAllCurrency();
 				List<AccountBalance> accountBalances = accountBalanceService.getOneAccountBalance(paramAccountNumber, username);
 				
 				if(!accountBalances.isEmpty()) {
@@ -108,8 +108,8 @@ public class OpenBankAPIAccountController {
 					
 					for(AccountBalance ab : accountBalances) {
 						String currency = ab.getCurrency();
-						BigDecimal currentBalance = ab.getCurrentBalance();
-						currencyBalances.add(new CurrencyBalance(currentBalance, currency));
+						BigDecimal availableBalance = ab.getAvailableBalance();
+						currencyBalances.add(new CurrencyBalance(availableBalance, currency));
 						
 						ZonedDateTime lastUpdateTime = ab.getLastUpdateTime();
 						if(maxLastUpdateTime == null || maxLastUpdateTime.compareTo(lastUpdateTime) < 0) {
@@ -132,12 +132,27 @@ public class OpenBankAPIAccountController {
 		}
 	}
 		
-	@PostMapping("/accountTxn/{paramAccountNumber}")
-	public ResponseEntity<Object> postAccountTxn(@RequestHeader(value=HEADER_STRING) String jwt, @PathVariable String paramAccountNumber, @RequestBody PostAccountTxnRequestBody requestBody){
+//	@PostMapping("/accountTxn/{paramAccountNumber}")
+//	public ResponseEntity<Object> postAccountTxn(@RequestHeader(value=HEADER_STRING) String jwt, @PathVariable String paramAccountNumber, @RequestBody PostAccountTxnRequestBody requestBody){
+//		try {
+//			String username = jwtUtil.validateTokenAndRetrieveSubject(jwt.replace(TOKEN_PREFIX, ""));
+//			
+//			return ResponseEntity.ok().body(accountBalanceService.postAccountOp(paramAccountNumber, requestBody, username));
+//		} catch(AccountOpNotSupportedException ex) {
+//			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", ex.getMessage()));
+//		} catch(AccountNotFoundException ex) {
+//			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", ex.getMessage()));
+//		} catch(Exception ex) {
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Internal server error"));
+//		}
+//	}
+	
+	@PostMapping("/fundTransfer")
+	public ResponseEntity<Object> postFundTransfer(@RequestHeader(value=HEADER_STRING) String jwt, @RequestBody PostAccountTxnRequestBody requestBody){
 		try {
 			String username = jwtUtil.validateTokenAndRetrieveSubject(jwt.replace(TOKEN_PREFIX, ""));
 			
-			return ResponseEntity.ok().body(accountBalanceService.postAccountOp(paramAccountNumber, requestBody, username));
+			return ResponseEntity.ok().body(accountBalanceService.postTransactions(requestBody, username));
 		} catch(AccountOpNotSupportedException ex) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", ex.getMessage()));
 		} catch(AccountNotFoundException ex) {
