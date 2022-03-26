@@ -138,6 +138,10 @@ public class AccountBalanceService {
 			AccountBalance fromAB = getOneAccountBalanceByCurrency(fromAccount, requestCurrency, username);
 			AccountBalance toAB = getOneAccountBalanceByCurrencyInternal(toAccount, requestCurrency);
 			
+			if(fromAB.getCurrentBalance().subtract(requestTxnAmount).signum() < 0) {
+				throw new InvalidTxnAmountException("From account has insufficient balance");
+			}
+			
 			fromAB.setCurrentBalance(fromAB.getCurrentBalance().subtract(requestTxnAmount));
 			fromAB.setAvailableBalance(fromAB.getAvailableBalance().subtract(requestTxnAmount));
 			fromAB.setLastUpdateTime(ZonedDateTime.now());

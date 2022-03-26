@@ -34,5 +34,9 @@ public class CustomerLoginAccountService implements UserDetailsService {
         }
         return builder == null ? null : builder.build();
 	}
+	
+	public String getHashedRequestPassword(String inputUsername, String inputPassword) {
+		return customerLoginAccountRepository.getHashedRequestPassword(inputUsername, inputPassword);
+	}
 
 }

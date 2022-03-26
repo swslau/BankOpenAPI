@@ -37,6 +37,7 @@ import com.open.bank.api.account.exception.AccountNotFoundException;
 import com.open.bank.api.account.exception.BadRequestBodyException;
 import com.open.bank.api.account.exception.InvalidTxnAmountException;
 import com.open.bank.api.account.service.AccountBalanceService;
+import com.open.bank.api.account.service.CustomerLoginAccountService;
 import com.open.bank.api.auth.JWTUtil;
 
 @RestController
@@ -49,6 +50,9 @@ public class OpenBankAPIAccountController {
 	private AccountBalanceService accountBalanceService;
 	
 	@Autowired
+	private CustomerLoginAccountService customerLoginAccountService;
+	
+	@Autowired
 	private AuthenticationManager authManager;
 	
 	@Autowired
@@ -58,8 +62,11 @@ public class OpenBankAPIAccountController {
 	public ResponseEntity<Object> getUserLoginJWT(@RequestBody LoginAccountRequestBody body){
 		logger.info("POST /auth/registry/user/login called");
 		try {
-            UsernamePasswordAuthenticationToken authInputToken = new UsernamePasswordAuthenticationToken(body.getUsername(), body.getPassword());
-
+            UsernamePasswordAuthenticationToken authInputToken = new UsernamePasswordAuthenticationToken(
+        		body.getUsername(),
+        		customerLoginAccountService.getHashedRequestPassword(body.getUsername(), body.getPassword())
+    		);
+            
             authManager.authenticate(authInputToken);
 
             String token = jwtUtil.generateToken(body.getUsername());
