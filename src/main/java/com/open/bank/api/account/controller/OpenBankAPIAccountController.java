@@ -38,6 +38,7 @@ import com.open.bank.api.account.exception.BadRequestBodyException;
 import com.open.bank.api.account.exception.InvalidTxnAmountException;
 import com.open.bank.api.account.service.AccountBalanceService;
 import com.open.bank.api.account.service.CustomerLoginAccountService;
+import com.open.bank.api.auth.AESDecryptUtil;
 import com.open.bank.api.auth.JWTUtil;
 
 @RestController
@@ -58,13 +59,16 @@ public class OpenBankAPIAccountController {
 	@Autowired
 	private JWTUtil jwtUtil;
 	
+	@Autowired
+	private AESDecryptUtil aesDecryptUtil;
+	
 	@PostMapping("/auth/registry/user/login")
 	public ResponseEntity<Object> getUserLoginJWT(@RequestBody LoginAccountRequestBody body){
 		logger.info("POST /auth/registry/user/login called");
 		try {
             UsernamePasswordAuthenticationToken authInputToken = new UsernamePasswordAuthenticationToken(
         		body.getUsername(),
-        		customerLoginAccountService.getHashedRequestPassword(body.getUsername(), body.getPassword())
+        		customerLoginAccountService.getHashedRequestPassword(body.getUsername(), aesDecryptUtil.decrypt(body.getPassword()))
     		);
             
             authManager.authenticate(authInputToken);
@@ -73,6 +77,8 @@ public class OpenBankAPIAccountController {
 
             return ResponseEntity.ok().body(Collections.singletonMap("jwt-token", token));
         } catch (AuthenticationException ex) {
+        	return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", "Not authenticated"));
+        } catch (Exception ex) {
         	return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", "Not authenticated"));
         }
 	}
